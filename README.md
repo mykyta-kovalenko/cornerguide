@@ -1,5 +1,7 @@
 ![CornerGuide](corner_guide.png)
 
+https://www.loom.com/share/26dcb55f10c6433da0fdab2c9d3bc525
+
 # CornerGuide 🥋
 
 **BJJ Rules Assistant - Avoid penalties, compete confidently**
@@ -18,12 +20,12 @@ Ask questions like "Are heel hooks legal for brown belts in IBJJF?" and get clea
 
 Advanced RAG system with 60.1% improvement in answer accuracy over baseline:
 
-| Metric | Score | Status |
-|--------|-------|--------|
-| Faithfulness | 0.730 | 🟢 Good |
-| Answer Relevancy | 0.676 | 🟠 Acceptable |
-| Context Precision | 0.912 | 🟢 Excellent |
-| Context Recall | 0.756 | 🟢 Good |
+| Metric            | Score | Status        |
+| ----------------- | ----- | ------------- |
+| Faithfulness      | 0.730 | 🟢 Good       |
+| Answer Relevancy  | 0.676 | 🟠 Acceptable |
+| Context Precision | 0.912 | 🟢 Excellent  |
+| Context Recall    | 0.756 | 🟢 Good       |
 
 ## Quick Start
 
