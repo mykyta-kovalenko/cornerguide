@@ -109,10 +109,9 @@ credentials/
 outputs/
 results/
 evaluations/
-*.png
+# *.png
 *.jpg
 *.jpeg
-ragas_eval.png
 
 # OS generated files
 .DS_Store
