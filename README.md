@@ -1,108 +1,86 @@
 # CornerGuide 🥋
 
-**Your BJJ Rules Assistant - Never Get Penalized Again**
+**BJJ Rules Assistant - Avoid penalties, compete confidently**
 
-CornerGuide is an AI-powered BJJ rules assistant that prevents costly mistakes by providing instant, authoritative answers about IBJJF and ADCC rules differences.
+An AI-powered assistant that provides instant answers about IBJJF and ADCC rules using advanced retrieval techniques and medical safety integration.
 
-## 🎯 Problem
+## Problem
 
-BJJ athletes and coaches routinely get penalized or DQ'd because IBJJF and ADCC rules differ on illegal moves, scoring, and uniform requirements. Digging through PDFs or relying on forum hearsay leads to avoidable mistakes during competition.
+BJJ athletes get penalized because it's overwhelming to go through full rulebooks, but they need quick answers about techniques used in daily sparring.
 
-## 💡 Solution
+## Solution
 
-One-stop, always-current rules reference that's faster and more reliable than manual rule lookup. Ask any rules question and get authoritative answers with citations, highlighting exact differences between federations.
+Ask questions like "Are heel hooks legal for brown belts in IBJJF?" and get clear answers with rule citations and medical safety context.
 
-## 🏗️ Architecture
+## Performance Results
 
+Advanced RAG system with 60.1% improvement in answer accuracy over baseline:
+
+| Metric | Score | Status |
+|--------|-------|--------|
+| Faithfulness | 0.730 | 🟢 Good |
+| Answer Relevancy | 0.676 | 🟠 Acceptable |
+| Context Precision | 0.912 | 🟢 Excellent |
+| Context Recall | 0.756 | 🟢 Good |
+
+## Quick Start
+
+```bash
+# Setup environment
+pip install -r requirements.txt
+cp .env.template .env
+# Add your OPENAI_API_KEY and COHERE_API_KEY to .env
+
+# Validate installation
+python validate.py
+
+# Run application
+python run.py
 ```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Streamlit     │    │   LangGraph      │    │    Qdrant       │
-│   Frontend      │───▶│   Orchestration  │───▶│  Vector Store   │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-                              │
-                              ▼
-                    ┌──────────────────┐
-                    │   Agent Pipeline │
-                    │                  │
-                    │ • Federation     │
-                    │   Router         │
-                    │ • Retrieval      │
-                    │   Agent          │
-                    │ • Answer Agent   │
-                    └──────────────────┘
-```
 
-## 🛠️ Tech Stack
+Opens at `http://localhost:8501` - PDF processing happens automatically on first run.
 
-### Core Framework
-- **LangChain**: RAG pipeline foundation
+## Key Features
+
+- **Advanced Retrieval**: Multi-query fusion with Cohere reranking
+- **Federation Routing**: Compare IBJJF vs ADCC or query specific federations
+- **Medical Integration**: Automatic PubMed research for dangerous techniques
+- **Semantic Chunking**: Complete rule contexts vs broken text fragments
+
+## Tech Stack
+
 - **LangGraph**: Agent orchestration and workflow
-- **LangSmith**: Tracing and monitoring
+- **GPT-4o + text-embedding-3-large**: Answer generation and embeddings
+- **Cohere rerank-english-v3.0**: Result reranking
+- **Qdrant**: In-memory vector database
+- **Streamlit**: Web interface
 
-### AI Models
-- **GPT-4o**: Answer generation and comparison
-- **OpenAI text-embedding-3-large**: Embeddings
+## Example Questions
 
-### Data & Infrastructure
-- **Qdrant**: Vector database (in-memory)
-- **Pydantic**: Structured data extraction
-- **Streamlit**: User interface
+- "Are heel hooks legal for brown belts in IBJJF?"
+- "What's the difference between IBJJF and ADCC scoring?"
+- "Can I grab inside the gi pants during guard passing?"
+- "Why are wrist locks banned for white belts?"
 
-### Evaluation
-- **RAGAS**: Answer relevancy, faithfulness, context recall
-- **LangSmith**: Performance tracking
-
-## 📁 Project Structure
+## Project Structure
 
 ```
 cornerguide/
-├── assets/                 # PDF rulebooks
+├── assets/              # Official PDF rulebooks
 ├── src/
-│   ├── models/            # Pydantic data models
-│   ├── extraction/        # PDF processing & chunking
-│   ├── agents/            # Individual agent implementations
-│   ├── graph/             # LangGraph orchestration
-│   ├── retrieval/         # Vector search & reranking
-│   └── evaluation/        # RAGAS evaluation pipeline
-├── app.py                 # Streamlit frontend
-├── config.py              # Configuration & settings
-└── requirements.txt       # Dependencies
+│   ├── agents/         # Retrieval, answer generation, medical research
+│   ├── extraction/     # PDF processing with strategy pattern
+│   ├── orchestration/  # LangGraph workflow
+│   └── evaluation/     # RAGAS evaluation pipeline
+├── app.py              # Streamlit interface
+├── deliverables.md     # Complete project documentation
+└── validate.py         # Installation checker
 ```
 
-## 🚀 Quick Start
+## Documentation
 
-1. **Setup Environment**
-   ```bash
-   pip install -r requirements.txt
-   cp .env.template .env
-   # Edit .env with your OpenAI API key
-   ```
-
-2. **Start App**
-   ```bash
-   python run.py
-   ```
-   The app will automatically process PDFs on first run.
-
-## 🎯 Success Metrics
-
-- **≥85%** helpful-vote rate in LangSmith feedback
-- **<3s** average response time
-- **Repeat usage** across competition cycles
-
-## 🔄 Data Pipeline
-
-1. **Extraction**: PDFs → Pydantic models → Structured chunks
-2. **Embedding**: OpenAI embeddings → Qdrant in-memory storage
-3. **Retrieval**: Similarity search → Top 10 results
-4. **Generation**: GPT-4o with citations → Optional comparison
-
-## 📊 Evaluation Framework
-
-- **Automated**: RAGAS metrics on 50 labeled Q&A pairs
-- **Manual**: LangSmith human feedback collection
-- **Continuous**: Weekly performance monitoring
+See [deliverables.md](deliverables.md) for complete project documentation including all 7 deliverables and detailed evaluation results.
 
 ---
 
-*Built for BJJ athletes who compete across federations and need instant rule clarity.*
+Built for BJJ athletes competing across federations who need instant, accurate rule guidance.
