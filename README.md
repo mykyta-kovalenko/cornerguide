@@ -1,3 +1,5 @@
+![CornerGuide](corner_guide.png)
+
 # CornerGuide 🥋
 
 **BJJ Rules Assistant - Avoid penalties, compete confidently**
