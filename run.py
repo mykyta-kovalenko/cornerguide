@@ -1,6 +1,9 @@
 import os
 import subprocess
 import sys
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def check_environment():
     required_vars = ["OPENAI_API_KEY", "COHERE_API_KEY"]
