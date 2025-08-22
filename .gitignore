@@ -95,7 +95,6 @@ tmp/
 # assets/*.pdf
 
 # Model artifacts (if you train custom models)
-models/
 checkpoints/
 *.pkl
 *.joblib
