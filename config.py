@@ -1,6 +1,7 @@
 """Configuration settings for CornerGuide."""
 
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -18,7 +19,7 @@ LANGSMITH_TRACING = True
 EMBEDDING_MODEL = "text-embedding-3-large"
 LLM_MODEL = "gpt-4o"
 
-# Vector Database Configuration  
+# Vector Database Configuration
 COLLECTION_NAME = "bjj_rules"
 
 # Retrieval Configuration
@@ -31,9 +32,17 @@ RERANK_TOP_K = 20
 ASSETS_DIR = "assets"
 PDF_FILES = [
     "ADCC_Rules.pdf",
-    "IBJJF_Rules.pdf", 
+    "IBJJF_Rules.pdf",
     "ADCC_Legal_Techniques.pdf",
     "IBJJF_Legal_Techniques.pdf",
     "ADCC_Weight_Classes_Divisions_Categories.pdf",
-    "IBJJF_RULES_UPDATE_GUIDE.pdf"
+    "IBJJF_RULES_UPDATE_GUIDE.pdf",
 ]
+
+# Confidence thresholds
+CONFIDENCE_THRESHOLD = 0.3  # Minimum avg rerank score to generate answer
+
+# Logging Configuration
+LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

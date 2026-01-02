@@ -39,7 +39,7 @@ cp .env.template .env
 python validate.py
 
 # Run application
-python run.py
+streamlit run app.py
 ```
 
 Opens at `http://localhost:8501` - PDF processing happens automatically on first run.
@@ -70,20 +70,36 @@ Opens at `http://localhost:8501` - PDF processing happens automatically on first
 
 ```
 cornerguide/
-├── assets/              # Official PDF rulebooks
+├── app.py              # Entry point: logging setup + launch
+├── config.py           # Centralized configuration
+├── startup/            # Application initialization
+│   ├── validation.py  # Environment validation
+│   └── initialization.py # System setup (Qdrant, PDFs, Workflow)
+├── ui/                 # User interface layer
+│   └── streamlit_ui.py # All Streamlit UI logic
 ├── src/
-│   ├── agents/         # Retrieval, answer generation, medical research
-│   ├── extraction/     # PDF processing with strategy pattern
-│   ├── orchestration/  # LangGraph workflow
-│   └── evaluation/     # RAGAS evaluation pipeline
-├── app.py              # Streamlit interface
-├── deliverables.md     # Complete project documentation
-└── validate.py         # Installation checker
+│   ├── models/        # Domain models (RuleChunk, enums)
+│   ├── agents/        # RAG agents (retrieval, generation, research)
+│   ├── extraction/    # PDF ingestion pipeline
+│   ├── orchestration/ # LangGraph workflow
+│   ├── vector_db/     # Qdrant vector database
+│   └── evaluation/    # RAGAS evaluation
+├── docs/              # Documentation
+│   ├── architecture/  # System architecture docs
+│   ├── decisions/     # Architecture Decision Records (ADRs)
+│   └── guides/        # How-to guides
+├── assets/            # Official PDF rulebooks (IBJJF, ADCC)
+└── validate.py        # Installation checker
 ```
+
+See [docs/architecture/overview.md](docs/architecture/overview.md) for detailed architecture documentation.
 
 ## Documentation
 
-See [deliverables.md](deliverables.md) for complete project documentation including all 7 deliverables and detailed evaluation results.
+- **[Architecture Overview](docs/architecture/overview.md)** - System design and data flow
+- **[ADR-003: UI/Business Logic Separation](docs/decisions/003-ui-business-logic-separation.md)** - Recent refactor decisions
+- **[Deliverables](deliverables.md)** - Complete project documentation and evaluation results
+- **[CLAUDE.md](CLAUDE.md)** - AI agent instructions and project guidelines
 
 ---
 
