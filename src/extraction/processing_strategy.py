@@ -1,12 +1,17 @@
+import logging
 from abc import ABC, abstractmethod
 from typing import List
+
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+from config import CHUNK_SIZE, CHUNK_OVERLAP
 from src.models.rules import RuleChunk
 from src.models.enums import Federation
 from .text_extractor import TextExtractor, FastTextExtractor, StructuredExtractor
 from .content_categorizer import ContentCategorizer
 from .metadata_extractor import MetadataExtractor
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from config import CHUNK_SIZE, CHUNK_OVERLAP
+
+logger = logging.getLogger(__name__)
 
 class ProcessingStrategy(ABC):
     def __init__(self):
@@ -36,7 +41,7 @@ class ProcessingStrategy(ABC):
         content_data = extractor.extract(pdf_path)
         
         if not content_data['text'] or len(content_data['text'].strip()) < 50:
-            print(f"Warning: Little/no content extracted from {source_file}")
+            logger.warning("Little/no content extracted from PDF", extra={"source_file": source_file})
             return []
         
         return self._create_chunks(content_data['text'], federation, source_file)

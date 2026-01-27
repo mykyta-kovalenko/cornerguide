@@ -1,10 +1,14 @@
+import logging
 from pathlib import Path
 from typing import List
+
 from config import ASSETS_DIR
 from src.models.rules import RuleChunk
 from src.models.enums import Federation
 from .processing_strategy import FastProcessingStrategy, StructuredProcessingStrategy
 from .metadata_extractor import MetadataExtractor
+
+logger = logging.getLogger(__name__)
 
 class PDFProcessor:
     def __init__(self):
@@ -23,7 +27,7 @@ class PDFProcessor:
         pdf_files = list(Path(ASSETS_DIR).glob("*.pdf"))
         
         if not pdf_files:
-            print(f"No PDF files found in {ASSETS_DIR}")
+            logger.warning("No PDF files found", extra={"assets_dir": ASSETS_DIR})
             return []
         
         for i, pdf_file in enumerate(pdf_files):
@@ -33,16 +37,16 @@ class PDFProcessor:
             if status_callback:
                 status_callback(current_status)
             else:
-                print(current_status)
+                logger.info(current_status)
             
             federation = self.metadata_extractor.determine_federation(filename)
             strategy = self._select_strategy(filename)
             
-            print(f"Using {strategy.__class__.__name__} for {filename}")
+            logger.debug("Processing PDF", extra={"strategy": strategy.__class__.__name__, "filename": filename})
             chunks = strategy.process(str(pdf_file), federation, filename)
-            
+
             all_chunks.extend(chunks)
-            print(f"Created {len(chunks)} chunks from {filename}")
-        
-        print(f"Created {len(all_chunks)} total chunks")
+            logger.info("Created chunks from PDF", extra={"chunk_count": len(chunks), "filename": filename})
+
+        logger.info("PDF processing complete", extra={"total_chunks": len(all_chunks)})
         return all_chunks

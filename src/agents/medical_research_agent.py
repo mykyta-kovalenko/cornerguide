@@ -1,13 +1,17 @@
+import logging
+import urllib.parse
 from typing import Dict, Any, List, Optional
-from src.models.rules import RuleChunk
+
 from pydantic import BaseModel
 from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.utilities import PubMedAPIWrapper
-import urllib.parse
 
 from config import LLM_MODEL
+from src.models.rules import RuleChunk
+
+logger = logging.getLogger(__name__)
 
 class InjuryAssessment(BaseModel):
     needs_research: bool
@@ -24,45 +28,10 @@ class MedicalResearchAgent:
         self.pubmed = PubMedAPIWrapper(top_k_results=3)
     
     def assess_injury_potential(self, question: str, answer: str, retrieved_chunks: List[RuleChunk]) -> InjuryAssessment:
-        assessment_prompt = ChatPromptTemplate.from_messages([
-            ("system", """You are a sports medicine expert analyzing BJJ techniques for injury potential.
-
-Given a BJJ rules question and answer, determine if the technique mentioned has significant injury risks that would warrant medical research.
-
-Focus on techniques that:
-- Are banned/restricted due to injury risk (heel hooks, neck cranks, etc.)
-- Target vulnerable anatomical areas (joints, spine, neck)
-- Can cause serious injuries requiring medical attention
-- Have documented injury patterns in grappling sports
-
-Do NOT research for:
-- Weight categories, time limits, uniform rules
-- Basic positions without submission attempts
-- General competition rules
-- Point scoring systems
-
-For techniques needing research, identify:
-1. The specific technique name
-2. Potential medical injuries/conditions
-3. Body parts at risk
-4. How injuries typically occur
-5. Medical search terms for research (use anatomical/medical terms only, avoid BJJ, grappling, martial arts)
-
-Be creative but medically sound. Focus on pure medical terminology for keywords."""),
-            ("user", """Question: {question}
-
-Answer: {answer}
-
-Retrieved Context: {context}
-
-Assess whether this warrants medical injury research.""")
-        ])
-        
         context_text = "\n".join([f"- {chunk.content[:200]}..." for chunk in retrieved_chunks[:3]])
-        
         parser = PydanticOutputParser(pydantic_object=InjuryAssessment)
-        
-        assessment_prompt_with_format = ChatPromptTemplate.from_messages([
+
+        assessment_prompt = ChatPromptTemplate.from_messages([
             ("system", """You are a sports medicine expert analyzing BJJ techniques for injury potential.
 
 Given a BJJ rules question and answer, determine if the technique mentioned has significant injury risks that would warrant medical research.
@@ -100,7 +69,7 @@ Assess whether this warrants medical injury research.""")
         
         try:
             response = self.creative_llm.invoke(
-                assessment_prompt_with_format.format_messages(
+                assessment_prompt.format_messages(
                     question=question,
                     answer=answer,
                     context=context_text,
@@ -112,7 +81,7 @@ Assess whether this warrants medical injury research.""")
             return assessment
             
         except Exception as e:
-            print(f"Error in injury assessment: {e}")
+            logger.warning("Error in injury assessment", extra={"error": str(e)})
             return InjuryAssessment(
                 needs_research=False,
                 technique_name="unknown",
@@ -179,7 +148,7 @@ Provide comprehensive medical safety analysis.""")
             }
             
         except Exception as e:
-            print(f"Error in medical research: {e}")
+            logger.error("Error in medical research", extra={"error": str(e), "technique": assessment.technique_name})
             return None
     
     def _search_pubmed_articles(self, keywords: List[str]) -> List[Dict[str, str]]:
@@ -209,7 +178,7 @@ Provide comprehensive medical safety analysis.""")
             return articles
             
         except Exception as e:
-            print(f"Error searching PubMed: {e}")
+            logger.warning("Error searching PubMed", extra={"error": str(e), "keywords": keywords[:3]})
             return []
     
     def process_medical_research(self, question: str, answer: str, retrieved_chunks: List[RuleChunk]) -> Optional[Dict[str, Any]]:

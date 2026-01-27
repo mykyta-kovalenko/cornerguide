@@ -1,9 +1,14 @@
+import logging
+from typing import List, Dict, Any
+
 from langchain_qdrant import Qdrant
 from langchain_openai import OpenAIEmbeddings
 from langchain_core.documents import Document
-from typing import List, Dict, Any
+
 from config import COLLECTION_NAME, EMBEDDING_MODEL
 from src.models.rules import RuleChunk
+
+logger = logging.getLogger(__name__)
 
 class QdrantManager:
     def __init__(self):
@@ -12,7 +17,7 @@ class QdrantManager:
     
     def create_from_chunks(self, chunks: List[RuleChunk]) -> bool:
         if not chunks:
-            print("Warning: No chunks to create vectorstore from")
+            logger.warning("No chunks to create vectorstore from")
             return False
         
         try:
@@ -38,16 +43,16 @@ class QdrantManager:
                 collection_name=COLLECTION_NAME
             )
             
-            print(f"Created vectorstore with {len(chunks)} chunks")
+            logger.info("Created vectorstore", extra={"chunk_count": len(chunks)})
             return True
         except Exception as e:
-            print(f"Error: Failed to create vectorstore: {e}")
+            logger.error("Failed to create vectorstore", extra={"error": str(e)})
             return False
     
     def search_similar(self, query: str, federation_filter: str = None, category_filter: str = None, 
                       belt_level_filter: str = None, limit: int = 10) -> List[dict]:
         if not self.vectorstore:
-            print("Error: Vectorstore not initialized")
+            logger.error("Vectorstore not initialized")
             return []
         
         try:
@@ -82,5 +87,5 @@ class QdrantManager:
             
             return formatted_results
         except Exception as e:
-            print(f"Error: Search failed: {e}")
+            logger.error("Search failed", extra={"error": str(e), "query": query[:100]})
             return []

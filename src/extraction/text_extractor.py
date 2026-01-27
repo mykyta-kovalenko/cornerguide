@@ -1,7 +1,11 @@
+import logging
 from abc import ABC, abstractmethod
 from typing import Dict, Any
+
 import PyPDF2
 from unstructured.partition.pdf import partition_pdf
+
+logger = logging.getLogger(__name__)
 
 class TextExtractor(ABC):
     @abstractmethod
@@ -20,7 +24,7 @@ class FastTextExtractor(TextExtractor):
                         text += f"\n--- Page {page_num + 1} ---\n{page_text}\n"
                 return {'text': text, 'tables': []}
         except Exception as e:
-            print(f"Error extracting text from {pdf_path}: {e}")
+            logger.error("Error extracting text from PDF", extra={"pdf_path": pdf_path, "error": str(e)})
             return {'text': "", 'tables': []}
 
 class StructuredExtractor(TextExtractor):
@@ -80,7 +84,7 @@ class StructuredExtractor(TextExtractor):
             
             return {'text': text_content, 'tables': tables}
         except Exception as e:
-            print(f"Error processing {pdf_path} with structured extraction: {e}")
+            logger.warning("Structured extraction failed, using fallback", extra={"pdf_path": pdf_path, "error": str(e)})
             return self._fallback_extract(pdf_path)
     
     def _fallback_extract(self, pdf_path: str) -> Dict[str, Any]:

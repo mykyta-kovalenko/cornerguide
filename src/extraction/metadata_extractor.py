@@ -1,6 +1,10 @@
+import logging
 import re
 from typing import Optional
+
 from src.models.enums import BeltLevel, Federation
+
+logger = logging.getLogger(__name__)
 
 class MetadataExtractor:
     def extract_belt_level(self, text: str) -> Optional[BeltLevel]:
@@ -44,8 +48,8 @@ class MetadataExtractor:
                 match = re.search(r"--- Page (\d+) ---", text)
                 if match:
                     return int(match.group(1))
-            except:
-                pass
+            except ValueError as e:
+                logger.debug("Failed to parse page number", extra={"error": str(e)})
         return None
     
     def determine_federation(self, filename: str) -> Federation:
