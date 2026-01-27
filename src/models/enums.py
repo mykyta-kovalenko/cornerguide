@@ -27,3 +27,4 @@ class AnswerType(str, Enum):
     COMPARISON = "comparison"
     SINGLE_FEDERATION = "single_federation"
     NO_CONTEXT = "no_context"
+    LOW_CONFIDENCE = "low_confidence"

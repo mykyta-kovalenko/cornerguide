@@ -1,77 +1,40 @@
-from typing import List, Dict, Any
-from pydantic import BaseModel
-from langchain_openai import ChatOpenAI
-from langchain_core.output_parsers import PydanticOutputParser
-from langchain_core.prompts import ChatPromptTemplate
+"""Deterministic retrieval agent for semantic search and reranking.
+
+This module handles vector similarity search and Cohere reranking.
+Query expansion (LLM-based) has been moved to QueryExpansionAgent to
+maintain the principle that retrieval should be deterministic.
+
+Reference: "Precise Zero-Shot Dense Retrieval" (Gao et al., 2021) for reranking patterns
+"""
+import logging
+from typing import List, Optional
+
 import cohere
 
-from config import LLM_MODEL, TOP_K_RETRIEVAL, RERANK_TOP_K, COHERE_API_KEY
+from config import TOP_K_RETRIEVAL, RERANK_TOP_K, COHERE_API_KEY
 from src.models.rules import RuleChunk
 
-class BJJQueryVariations(BaseModel):
-    reformulation_1: str
-    reformulation_2: str
+logger = logging.getLogger(__name__)
 
-QUERY_GENERATION_TEMPLATE = """
-You are a BJJ rules expert. Generate 2 focused search queries that rephrase the original question using different BJJ terminology while maintaining the same intent.
-
-Original query: {question}
-
-Generate 2 reformulated queries:
-
-reformulation_1: [rephrase using alternative BJJ terms and rule language - use federation-specific terms like "juvenile" for teenagers, "youth" for kids]
-reformulation_2: [rephrase focusing on the core rule concept with different wording - include age ranges and division names]
-
-Keep queries concise, rule-focused, and directly related to the original question intent.
-
-{format_instructions}
-"""
 
 class RetrievalAgent:
+    """Deterministic retrieval agent for semantic search and reranking.
+
+    This agent does NOT call LLMs. Query expansion should happen before
+    calling this agent's retrieve method.
+    """
+
     def __init__(self, qdrant_manager=None):
-        self.llm = ChatOpenAI(model=LLM_MODEL, temperature=0)
         self.qdrant_manager = qdrant_manager
-        self.parser = PydanticOutputParser(pydantic_object=BJJQueryVariations)
-        self.query_generation_prompt = ChatPromptTemplate.from_template(QUERY_GENERATION_TEMPLATE)
-        
+
         if COHERE_API_KEY:
             self.cohere_client = cohere.Client(COHERE_API_KEY)
         else:
             self.cohere_client = None
     
-    
-    def generate_fusion_queries(self, refined_question: Dict[str, Any]) -> List[str]:
-        question = refined_question["refined_question"]
-        
-        try:
-            response = (
-                self.query_generation_prompt 
-                | self.llm 
-                | self.parser
-            ).invoke({
-                "question": question, 
-                "format_instructions": self.parser.get_format_instructions()
-            })
-            
-            queries = [
-                response.reformulation_1,
-                response.reformulation_2,
-            ]
-            
-            unique_queries = []
-            for query in queries:
-                if query and query.strip() and query not in unique_queries:
-                    if len(query.split()) > 2:  # Keep more similar queries
-                        unique_queries.append(query.strip())
-            
-            return [question] + unique_queries
-        except Exception as e:
-            print(f"Failed to generate query variations: {e}")
-            return [question]
-    
     def retrieve_chunks(self, queries: List[str], federation_filter: str = None) -> List[RuleChunk]:
         if not self.qdrant_manager or not self.qdrant_manager.vectorstore:
-            print("No vectorstore available")
+            logger.error("No vectorstore available for retrieval")
             return []
         
         all_results = []
@@ -102,34 +65,54 @@ class RetrievalAgent:
         
         return all_results
     
-    def retrieve(self, refined_question: Dict[str, Any], federation_filter: str = None) -> List[RuleChunk]:
-        queries = self.generate_fusion_queries(refined_question)
+    def retrieve(self, queries: List[str], federation_filter: Optional[str] = None) -> List[RuleChunk]:
+        """Retrieve and rerank chunks for the given queries.
+
+        Args:
+            queries: List of search queries (typically from QueryExpansionAgent)
+            federation_filter: Optional federation to filter results by
+
+        Returns:
+            List of RuleChunk objects, reranked if Cohere is available
+        """
+        if not queries:
+            logger.warning("No queries provided for retrieval")
+            return []
+
         raw_results = self.retrieve_chunks(queries, federation_filter)
-        
+
+        # Deduplicate results
         unique_results = []
         seen_content = set()
-        
+
         raw_results.sort(key=lambda x: x.retrieval_score or 0, reverse=True)
-        # Remove restrictive score filtering - let reranker do the quality assessment
         filtered_results = raw_results[:RERANK_TOP_K] if len(raw_results) > RERANK_TOP_K else raw_results
-        
+
         for result in filtered_results:
             content_hash = hash(result.content)
             if content_hash not in seen_content:
                 seen_content.add(content_hash)
                 unique_results.append(result)
-        
+
         unique_results.sort(key=lambda x: x.retrieval_score or 0, reverse=True)
-        
-        # Always apply Cohere reranking if available and we have enough results
+
+        logger.info("Retrieved chunks", extra={
+            "num_queries": len(queries),
+            "raw_results": len(raw_results),
+            "unique_results": len(unique_results),
+            "federation_filter": federation_filter
+        })
+
+        # Apply Cohere reranking if available
         if self.cohere_client and len(unique_results) > 0:
+            # Use the first query (original question) for reranking
             reranked_results = self._rerank_with_cohere(
-                refined_question["refined_question"], 
+                queries[0],
                 unique_results[:RERANK_TOP_K]
             )
-            if reranked_results:  # Check if reranking was successful
+            if reranked_results:
                 return reranked_results[:TOP_K_RETRIEVAL]
-        
+
         return unique_results[:TOP_K_RETRIEVAL]
     
     def _rerank_with_cohere(self, query: str, results: List[RuleChunk]) -> List[RuleChunk]:
@@ -153,5 +136,5 @@ class RetrievalAgent:
             
             return reranked_results
         except Exception as e:
-            print(f"Reranking failed: {e}")
+            logger.warning("Cohere reranking failed, using original results", extra={"error": str(e)})
             return results
